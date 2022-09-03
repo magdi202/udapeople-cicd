@@ -216,7 +216,7 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yml
             
-      - destroy_environment    
+      - destroy-environment   
 
   # run-migrations:
   #   docker:
@@ -351,6 +351,9 @@ workflows:
               only: [master]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
+          filters:
+            branches:
+              only: [master]
       # - run-migrations:
       #     requires: [configure-infrastructure]
       # - deploy-frontend:
