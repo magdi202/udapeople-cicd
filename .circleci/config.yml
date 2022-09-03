@@ -364,8 +364,17 @@ jobs:
       - run:
           name: Frontend smoke test.
           command: |
-            # your code here
-      # Here's where you will add some code to rollback on failure  
+           URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com"            
+           echo ${URL} 
+           if curl -s ${URL} | grep "Welcome"
+           then
+             return 2
+           else
+             return 1
+           fi
+      - destroy-environment
+      - revert-migrations    
+
 
 #   cloudfront-update:
 #     docker:
@@ -440,8 +449,11 @@ workflows:
           filters:
             branches:
               only: [master]
-      # - smoke-test:
-      #     requires: [deploy-backend, deploy-frontend]
+      - smoke-test:
+          requires: [deploy-backend, deploy-frontend]
+          filters:
+            branches:
+              only: [master]
       # - cloudfront-update:
       #     requires: [smoke-test]
       # - cleanup:
