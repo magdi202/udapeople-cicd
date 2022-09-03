@@ -418,7 +418,7 @@ workflows:
             branches:
               only: [master]
       - deploy-frontend:
-          requires: [run-migrations]
+          requires: [run-migrations,deploy-backend]
           filters:
             branches:
               only: [master]
