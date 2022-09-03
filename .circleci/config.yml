@@ -285,26 +285,51 @@ jobs:
           command: |
             cd frontend
             npm run build
+            #tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy-environment
       - revert-migrations    
                     
-#   deploy-backend:
-#     docker:
-#       # Docker image here that supports Ansible
-#     steps:
-#       # Checkout code from git
-#       # Add ssh keys with fingerprint
-#       # attach workspace
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Deploy backend
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure  
+  deploy-backend:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - install_aws_cli
+      - install_nodejs
+      - install_ansible
+      - add_ssh_keys:
+          fingerprints: ["89:7f:4b:9b:ba:54:53:d5:ed:de:a0:34:b7:15:d4:67"]
+      - attach_workspace:
+          at: ~/
+      - restore_cache:
+          keys: ["backend-dependencies"]
+      - run:
+          name: Install dependencies
+          command: |
+            cd backend
+            npm install
+      - run:
+          name: package backend modules
+          command: |
+            cd backend
+            npm run build 
+            tar -czvf artifact.tar.gz dist/* package*
+            cd ..
+            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
+
+      - run:
+          name: Deploy backend
+          command: |
+            export TYPEORM_MIGRATIONS_DIR= ./migrations
+            export TYPEORM_ENTITIES= ./modules/domain/**/*.entity{.ts,.js}
+            export TYPEORM_MIGRATIONS= ./migrations/*.ts
+            cd .circleci/ansible
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+
+      - destroy-environment
+      - revert-migrations    
 
 #   smoke-test:
 #     docker:
@@ -397,8 +422,11 @@ workflows:
           filters:
             branches:
               only: [master]
-      # - deploy-backend:
-      #     requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migrations]
+          filters:
+            branches:
+              only: [master]
       # - smoke-test:
       #     requires: [deploy-backend, deploy-frontend]
       # - cloudfront-update:
