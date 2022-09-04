@@ -16,11 +16,11 @@
     cd ~/backend-app/dist
     pm2 stop default
     pm2 start main.js
-  register: execute_node
+  register: output
 
-- name:  "print message"
+- name:  "print status of executing the backend app"
   debug:
-    msg: "{{exeute_node.stdout_lines}}"
+    msg: "{{output.stdout_lines}}"
 
 - name : "run pm2 as a service"
   become: true
